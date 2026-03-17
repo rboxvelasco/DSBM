@@ -215,3 +215,25 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Cmd(0x22);
     Write_SPI_TFT_Dat(color);
 }
+
+/*
+void SPI_TFT_pixel(int x, int y, int color)
+{
+    //Sets a Pixel X,Y to a Color
+    Write_SPI_TFT_Reg(0x03,(x>>0));
+    Write_SPI_TFT_Reg(0x02,(x>>8));
+    Write_SPI_TFT_Reg(0x07,(y>>0));
+    Write_SPI_TFT_Reg(0x06,(y>>8));
+    
+    Write_SPI_TFT_Reg(??,(x>>0));
+    Write_SPI_TFT_Reg(??,(x>>8));
+    Write_SPI_TFT_Reg(??,(y>>0));
+    Write_SPI_TFT_Reg(??,(y>>8));
+
+    for (x)
+      for (y)
+        Write_SPI_TFT_Cmd(0x22);
+        Write_SPI_TFT_Dat(color);
+}
+
+*/

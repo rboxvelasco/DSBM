@@ -1,0 +1,2 @@
+1. bit banging -> hw especialitzat
+2. modificar registres al dibuixar regons grans

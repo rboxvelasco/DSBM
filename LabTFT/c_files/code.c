@@ -1,19 +1,23 @@
 #include <stdio.h>
 #include <time.h>
-#include "lib.c"
-#include "driver.c"
+#include "lib.h"
+#include "driver.h"
 #include "colors.h"
+
+Font Font5x7_struct = { Font5x7, 5, 7 };
+
 
 int main() {
     printf("Call to config_pins\n");
-    Config_Pins();
+    init();
 
     printf("Call to fill_screen:\n");
 
     struct timespec start, end;
 
     clock_gettime(CLOCK_MONOTONIC, &start);
-    TFT_fill_screen(RED);
+    clear_screen(GREEN);
+    draw_text_scaled(10,10,"HOLA :) MUNDO", RED, Font5x7_struct, 2);
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double elapsed = (end.tv_sec - start.tv_sec) +

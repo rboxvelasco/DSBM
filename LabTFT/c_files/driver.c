@@ -1,21 +1,6 @@
 //FIB, DSBM, Enric X. Martin Rull, March 2016
 
-#include<wiringPi.h>
-#include<stdio.h>
-#include "ascii5x7.h"
-
-//Connections, TFT pin = board pin
-#define Reset_Pin   17
-#define CS_Pin      8
-#define SCLK_Pin    11
-#define SDO_Pin     9
-#define SDI_Pin     10
-
-//Screen positions
-#define Orig_X      0
-#define Orig_Y      0
-#define Size_X      240
-#define Size_Y      320
+#include "driver.h"
 
 //TFT Interface Functions
 

@@ -269,6 +269,33 @@ void draw_text_scaled(int x, int y, const char *text, int color, Font font, int 
     }
 }
 
+void draw_image_file(int x, int y, int dest_w, int dest_h, const char *path)
+{
+    int src_w, src_h, channels;
+
+    // Carrega la imatge i força 3 canals (RGB)
+    unsigned char *data = stbi_load(path, &src_w, &src_h, &channels, 3);
+    if (!data) {
+        printf("Error: no s'ha pogut carregar '%s': %s\n",
+               path, stbi_failure_reason());
+        return;
+    }
+
+    // Resize nearest-neighbor + conversió RGB → RGB565 + draw
+    for (int row = 0; row < dest_h; row++) {
+        for (int col = 0; col < dest_w; col++) {
+            int src_x = col * src_w / dest_w;
+            int src_y = row * src_h / dest_h;
+            int idx   = (src_y * src_w + src_x) * 3;
+
+            int color = rgb_to_565(data[idx], data[idx+1], data[idx+2]);
+            draw_pixel(x + col, y + row, color);
+        }
+    }
+
+    stbi_image_free(data);
+}
+
 
 //     UTILITATS
 

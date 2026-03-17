@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 // TFT Graphics Library
 // Basada en el driver SPI d'Enric X. Martin Rull (FIB, DSBM, Març 2016)
 // Llibreria de funcions grafiques d'alt nivell per a pantalla TFT 240x320

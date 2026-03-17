@@ -57,6 +57,9 @@ void draw_text(int x, int y, const char *text, int color);
 void draw_char_scaled(int x, int y, char c, int color, Font font, int scale);
 void draw_text_scaled(int x, int y, const char *text, int color, Font font, int scale);
 
+// Imatges
+void draw_image_file(int x, int y, int dest_w, int dest_h, const char *path);
+
 // Utilitats
 int  rgb_to_565(int r, int g, int b);
 int  random_color();

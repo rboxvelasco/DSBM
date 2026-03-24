@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <time.h>
 #include "colors.h"
-#include "driver.h"
+#include "driver_bcm.h"
 #include "ascii5x7.h"
 
 

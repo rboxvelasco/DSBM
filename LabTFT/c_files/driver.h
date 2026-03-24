@@ -5,6 +5,8 @@
 #include<wiringPi.h>
 #include<stdio.h>
 #include "ascii5x7.h"
+#include <stdlib.h>
+//#include <bcm2835.h>
 
 //Connections, TFT pin = board pin
 #define Reset_Pin   17

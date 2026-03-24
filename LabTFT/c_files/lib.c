@@ -61,7 +61,7 @@ void draw_pixel(int x, int y, int color)
  *   length -- longitud en pixels
  *   color  -- color RGB565
  */
-/*
+
 void draw_hline(int x, int y, int length, int color)
 {
     int i;
@@ -69,13 +69,14 @@ void draw_hline(int x, int y, int length, int color)
         draw_pixel(x + i, y, color);
 }
 
-*/
 
+/*
 void draw_hline(int x, int y, int length, int color)
 {
     // Usamos SPI_TFT_region para dibujar una línea horizontal completa
     SPI_TFT_region(x, y, x + length - 1, y, color);
 }
+*/
 
 
 
@@ -139,20 +140,22 @@ void draw_rectangle(int x, int y, int width, int height, int color)
  * Exemple:
  *   draw_filled_rectangle(10, 10, 100, 60, COLOR_WHITE);
  */
-/*
+
 void draw_filled_rectangle(int x, int y, int width, int height, int color)
 {
     int row;
     for (row = 0; row < height; row++)
         draw_hline(x, y + row, width, color);
 }
-*/
+
+/*
 
 void draw_filled_rectangle(int x, int y, int width, int height, int color)
 {
     // Usamos SPI_TFT_region para dibujar el rectángulo completo
     SPI_TFT_region(x, y, x + width - 1, y + height - 1, color);
 }
+*/
 
 
 /**

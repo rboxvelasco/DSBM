@@ -17,7 +17,8 @@ int main() {
 
     clock_gettime(CLOCK_MONOTONIC, &start);
     clear_screen(GREEN);
-    draw_text_scaled(10,10,"HOLA :) MUNDO", RED, Font5x7_struct, 2);
+//    draw_image_file(0,0,Size_X,Size_Y,"../images/on.png");
+    draw_text_scaled(10,10,"HOLA MUNDO :)", RED, Font5x7_struct, 2);
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double elapsed = (end.tv_sec - start.tv_sec) +
@@ -27,3 +28,4 @@ int main() {
 
     return 0;
 }
+

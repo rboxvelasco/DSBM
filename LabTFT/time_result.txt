@@ -1,1 +1,9 @@
+temps originals:
+---------------------
 Python time: 157.114667s
+C Temps: 3.475100 segons
+
+
+temps optimitzats:
+----------------------
+C Temps amb optimitzacio de regio: 0.428800 segons

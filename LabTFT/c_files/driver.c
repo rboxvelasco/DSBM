@@ -1,3 +1,4 @@
+
 //FIB, DSBM, Enric X. Martin Rull, March 2016
 
 #include "driver.h"
@@ -14,12 +15,13 @@ void Config_Pins()
     pinMode(SDI_Pin, OUTPUT);
     pinMode(SDO_Pin, INPUT);
 
-    /** Initial values  **/
+    // Initial values
     digitalWrite(CS_Pin, HIGH);
     digitalWrite(Reset_Pin, HIGH);
     digitalWrite(SCLK_Pin, LOW);
     delay(200);     //200 ms o 0.2s
 }
+
 
 /** NI IDEA DE COM PASSAR LA FUNCIÓ A C
  * def Free_Pins():
@@ -216,6 +218,28 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Dat(color);
 }
 
+void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
+    // Establecer las coordenadas de la región
+    Write_SPI_TFT_Reg(0x03, (x1 >> 0));  // X1 (parte baja)
+    Write_SPI_TFT_Reg(0x02, (x1 >> 8));  // X1 (parte alta)
+    Write_SPI_TFT_Reg(0x07, (y1 >> 0));  // Y1 (parte baja)
+    Write_SPI_TFT_Reg(0x06, (y1 >> 8));  // Y1 (parte alta)
+
+    Write_SPI_TFT_Reg(0x50, (x2 >> 0));  // X2 (parte baja)
+    Write_SPI_TFT_Reg(0x51, (x2 >> 8));  // X2 (parte alta)
+    Write_SPI_TFT_Reg(0x52, (y2 >> 0));  // Y2 (parte baja)
+    Write_SPI_TFT_Reg(0x53, (y2 >> 8));  // Y2 (parte alta)
+
+    Write_SPI_TFT_Cmd(0x22);  // Comando para iniciar la escritura de píxeles
+
+    // Iterar sobre la región para pintar cada píxel
+    for (int x = x1; x <= x2; x++) {
+      for (int y = y1; y <= y2; y++) {
+            Write_SPI_TFT_Dat(color);  // Escribir el color para el píxel
+        }
+    }
+}
+
 /*
 void SPI_TFT_pixel(int x, int y, int color)
 {
@@ -224,7 +248,7 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Reg(0x02,(x>>8));
     Write_SPI_TFT_Reg(0x07,(y>>0));
     Write_SPI_TFT_Reg(0x06,(y>>8));
-    
+
     Write_SPI_TFT_Reg(??,(x>>0));
     Write_SPI_TFT_Reg(??,(x>>8));
     Write_SPI_TFT_Reg(??,(y>>0));
@@ -236,4 +260,117 @@ void SPI_TFT_pixel(int x, int y, int color)
         Write_SPI_TFT_Dat(color);
 }
 
+*/
+/*
+#include "driver.h"
+
+
+void Config_Pins() {
+    bcm2835_init();
+
+    // Hardware SPI (MOSI=GPIO10, MISO=GPIO9, SCLK=GPIO11)
+    bcm2835_spi_begin();
+    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
+    bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
+
+    // Divisor de rellotge: 8 → ~31.25 MHz (ajustar si cal)
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_8);
+
+    // CS i Reset controlats manualment per GPIO
+    bcm2835_gpio_fsel(CS_Pin,    BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_fsel(Reset_Pin, BCM2835_GPIO_FSEL_OUTP);
+
+    bcm2835_gpio_write(CS_Pin,    HIGH);
+    bcm2835_gpio_write(Reset_Pin, HIGH);
+    bcm2835_delay(200);
+}
+
+
+void CS_TFT(int value) {
+    bcm2835_gpio_write(CS_Pin, value ? HIGH : LOW);
+}
+
+void Reset_TFT(int value) {
+    bcm2835_gpio_write(Reset_Pin, value ? HIGH : LOW);
+}
+
+
+void Send_SPI_8(uint8_t value) {
+    bcm2835_spi_transfer(value);   // HW envia els 8 bits automàticament
+}
+
+
+void Write_SPI_TFT_Cmd(int reg) {
+    CS_TFT(0);
+    Send_SPI_8(0x70);
+    Send_SPI_8((uint8_t)reg);
+    CS_TFT(1);
+}
+
+void Write_SPI_TFT_Dat(int value) {
+    CS_TFT(0);
+    Send_SPI_8(0x72);
+    Send_SPI_8((uint8_t)(value >> 8));
+    Send_SPI_8((uint8_t)(value));
+    CS_TFT(1);
+}
+
+void Write_SPI_TFT_Reg(int reg, int value) {
+    Write_SPI_TFT_Cmd(reg);
+    Write_SPI_TFT_Dat(value);
+}
+
+int Read_SPI_TFT_Reg(int reg) {
+    Write_SPI_TFT_Cmd(reg);
+    return 0x0000;
+}
+
+// (igual que abans, no canvia)
+void SPI_TFT_Reset() {
+//  ... mateix codi ...
+}
+
+
+void SPI_TFT_pixel(int x, int y, int color) {
+    Write_SPI_TFT_Reg(0x03, (x >> 0));
+    Write_SPI_TFT_Reg(0x02, (x >> 8));
+    Write_SPI_TFT_Reg(0x07, (y >> 0));
+    Write_SPI_TFT_Reg(0x06, (y >> 8));
+    Write_SPI_TFT_Cmd(0x22);
+    Write_SPI_TFT_Dat(color);
+}
+
+// Fixa la finestra UNA sola vegada i envia tots els píxels seguits.
+// El controlador TFT avança l'adreça automàticament.
+
+void SPI_TFT_fill_region(int x, int y, int w, int h, int color) {
+    int x_end = x + w - 1;
+    int y_end = y + h - 1;
+
+    // Definir finestra de coordenades
+    Write_SPI_TFT_Reg(0x03, (x     >> 0));
+    Write_SPI_TFT_Reg(0x02, (x     >> 8));
+    Write_SPI_TFT_Reg(0x05, (x_end >> 0));
+    Write_SPI_TFT_Reg(0x04, (x_end >> 8));
+    Write_SPI_TFT_Reg(0x07, (y     >> 0));
+    Write_SPI_TFT_Reg(0x06, (y     >> 8));
+    Write_SPI_TFT_Reg(0x09, (y_end >> 0));
+    Write_SPI_TFT_Reg(0x08, (y_end >> 8));
+
+    // Enviar ordre d'escriptura UNA vegada
+    Write_SPI_TFT_Cmd(0x22);
+
+    // Enviar tots els píxels seguits (sense repetir Cmd/Reg)
+    uint8_t hi = (uint8_t)(color >> 8);
+    uint8_t lo = (uint8_t)(color);
+
+    int total = w * h;
+    CS_TFT(0);
+    Send_SPI_8(0x72);          // start byte "data"
+    for (int i = 0; i < total; i++) {
+        Send_SPI_8(hi);
+        Send_SPI_8(lo);
+    }
+    CS_TFT(1);
+}
 */

@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <time.h>
 #include "lib.h"
@@ -18,13 +19,17 @@ int main() {
 
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    clear_screen(ORANGE);
+    clear_screen(GREEN);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     printf("Pantalla limpia, ejecutando draw_text_scaled...\n");
-//    draw_image_file(0,0,Size_X,Size_Y,"../images/on.png");
     draw_text_scaled(10, 10, "HOLA MUNDO :)", RED, Font5x7_struct, 2);
+
+    draw_filled_rectangle(50, 50, 60, 60, BLUE);
+
+    draw_image_file(30,100,160,200,"../images/on.png");
+
 
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
 
@@ -32,3 +37,4 @@ int main() {
 
     return 0;
 }
+

@@ -1,12 +1,10 @@
-
 #include <wiringPi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include "driver.h"
 #include "colors.h"
-#include "driver_bcm.h"
 #include "ascii5x7.h"
-
 
 #ifndef LIB_H
 #define LIB_H
@@ -27,16 +25,16 @@
 #define COLOR_CYAN    0x07FF
 #define COLOR_MAGENTA 0xF81F
 
+// Used in the draw_char and draw_text functions
+#define FONT_WIDTH  5
+#define FONT_HEIGHT 7
 
-// Auxiliars per a escalar texts
+// Used in the draw_char_scaled and draw_text_scaled functions
 typedef struct {
     const unsigned char *data;
     int width;
     int height;
 } Font;
-
-//Font Font5x7_struct = { Font5x7, 5, 7 };
-
 
 // Inicialitzacio i alliberament
 void init();
@@ -52,9 +50,9 @@ void draw_rectangle(int x, int y, int width, int height, int color);
 void draw_filled_rectangle(int x, int y, int width, int height, int color);
 void draw_white_rectangle(int x, int y, int width, int height);
 void draw_white_filled_rectangle(int x, int y, int width, int height);
-void draw_char(int x, int y, char c, int color);
+void draw_char(int x, int y, unsigned char c, int color);
 void draw_text(int x, int y, const char *text, int color);
-void draw_char_scaled(int x, int y, char c, int color, Font font, int scale);
+void draw_char_scaled(int x, int y, unsigned char c, int color, Font font, int scale);
 void draw_text_scaled(int x, int y, const char *text, int color, Font font, int scale);
 
 // Imatges

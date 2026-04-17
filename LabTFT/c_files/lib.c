@@ -1,24 +1,15 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 // TFT Graphics Library
 // Basada en el driver SPI d'Enric X. Martin Rull (FIB, DSBM, Març 2016)
 // Llibreria de funcions grafiques d'alt nivell per a pantalla TFT 240x320
-
 #include "lib.h"
-
-#define FONT_WIDTH  5
-#define FONT_HEIGHT 7
-
+#include "stb_image.h"
 
 // Prototips interns del driver (definits a driver.c)
 void Config_Pins();
 void SPI_TFT_Reset();
 void SPI_TFT_pixel(int x, int y, int color);
 
-
-//     INICIALITZACIo
-
+//     INICIALITZACIO
 
 /**
  * Inicialitza els pins GPIO i la pantalla TFT.
@@ -193,7 +184,7 @@ void draw_white_filled_rectangle(int x, int y, int width, int height)
 }
 
 
-void draw_char(int x, int y, char c, int color)
+void draw_char(int x, int y, unsigned char c, int color)
 {
     if (c < 32 || c > 127) return;
 
@@ -214,7 +205,7 @@ void draw_char(int x, int y, char c, int color)
 }
 
 
-void draw_char_scaled(int x, int y, char c, int color, Font font, int scale)
+void draw_char_scaled(int x, int y, unsigned char c, int color, Font font, int scale)
 {
     if (c < 32 || c > 127) return;
     if (scale < 1) scale = 1;

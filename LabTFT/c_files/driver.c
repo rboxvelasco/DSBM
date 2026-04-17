@@ -1,4 +1,3 @@
-
 //FIB, DSBM, Enric X. Martin Rull, March 2016
 
 #include "driver.h"
@@ -126,7 +125,7 @@ void SPI_TFT_Reset()
     Reset_TFT(1);
     delay(6);
 
-    int driverCode = Read_SPI_TFT_Reg(0x00);
+    // int driverCode = Read_SPI_TFT_Reg(0x00);
 
     //Start Initial Sequence
     Write_SPI_TFT_Reg(0xEA, 0x0000);    //Reset Power Control 1

@@ -1,34 +1,28 @@
-CC = gcc
+CC     = gcc
 CFLAGS = -Wall -Wextra -O2
-LIBS_CODE = -lwiringPi -lm
-LIBS_UART = -lpthread -lwiringPi -lm
+LIBS   = -lwiringPi -lm -lpthread
+OBJS   = driver.o lib.o stb_image.o
 
-TARGET1 = code.exe
-TARGET2 = uart_pic
-TARGET3 = uart_copy
+# --- Programes principals ---
+TARGETS = print_screen uart_button uart_basic
 
-OBJS_CODE = code.o driver.o lib.o
-OBJS_UART = uart.o driver.o lib.o
-OBJS_UART_COPY = uart.o driver.o lib.o
+all: $(TARGETS)
 
-all: $(TARGET1) $(TARGET2)
+# Regla generica per generar executables
+$(TARGETS): %: %.o $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
-# --- Programa principal ---
-$(TARGET1): $(OBJS_CODE)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS_CODE)
-
-# --- UART ---
-$(TARGET2): $(OBJS_UART)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS_UART)
-
-# --- UART_COPY ---
-$(TARGET): $(OBJS_UART_COPY)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS_UART)
-
-# --- Compilació d'objectes ---
+# --- Compilacio d'objectes normals ---
 %.o: %.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# --- Regla especial per stb_image 
+stb_image.o: stb_image.h
+	$(CC) -DSTB_IMAGE_IMPLEMENTATION -x c -c $< -o $@
 
 # --- Neteja ---
 clean:
-	rm -f *.o $(TARGET1) $(TARGET2)
+	rm -f $(addsuffix .o, $(TARGETS)) $(TARGETS)
+
+realclean: clean
+	rm -f $(OBJS)

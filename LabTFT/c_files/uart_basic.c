@@ -134,7 +134,7 @@ void tx_loop() {
             len = snprintf(payload, sizeof(payload), "%s\r\n", input);
         }
 
-        int written = write(fd, payload, len);
+        int written = write(fd, payload, 1);
         if (written < 0)
             fprintf(stderr, "[ERROR TX] %s\n", strerror(errno));
         else

@@ -216,6 +216,8 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Dat(color);
 }
 
+// Optimització per a pintar regions, en comptes d'enviar la info a cada píxel,
+// només l'envia un cop
 void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
     // Establecer las coordenadas de la región
     Write_SPI_TFT_Reg(0x03, (x1 >> 0));  // X1 (parte baja)

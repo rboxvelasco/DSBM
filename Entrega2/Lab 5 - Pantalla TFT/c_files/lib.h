@@ -9,21 +9,14 @@
 #ifndef LIB_H
 #define LIB_H
 
+
+/*************** CONSTANTS I AUXILIARS *****************************************/
+
 // Dimensions de la pantalla
 #define Orig_X  0
 #define Orig_Y  0
 #define Size_X  240
 #define Size_Y  320
-
-// Colors predefinits RGB565
-#define COLOR_WHITE   0xFFFF
-#define COLOR_BLACK   0x0000
-#define COLOR_RED     0xF800
-#define COLOR_GREEN   0x07E0
-#define COLOR_BLUE    0x001F
-#define COLOR_YELLOW  0xFFE0
-#define COLOR_CYAN    0x07FF
-#define COLOR_MAGENTA 0xF81F
 
 // Used in the draw_char and draw_text functions
 #define FONT_WIDTH  5
@@ -36,29 +29,37 @@ typedef struct {
     int height;
 } Font;
 
-// Inicialitzacio i alliberament
+
+/*************** INICIALITZACIO ************************************************/
 void init();
 void quit();
 
-// Primitives grafiques base
+
+/************* FUNCIONS BÀSIQUES *************************************************/
 void draw_pixel(int x, int y, int color);
 void draw_hline(int x, int y, int length, int color);
 void draw_vline(int x, int y, int length, int color);
 
-// Rectangles
+
+/************* FORMES GEOMETRIQUES *************************************************/
 void draw_rectangle(int x, int y, int width, int height, int color);
 void draw_filled_rectangle(int x, int y, int width, int height, int color);
 void draw_white_rectangle(int x, int y, int width, int height);
 void draw_white_filled_rectangle(int x, int y, int width, int height);
+
+
+/***************** TEXT *****************************************************/
 void draw_char(int x, int y, unsigned char c, int color);
 void draw_text(int x, int y, const char *text, int color);
 void draw_char_scaled(int x, int y, unsigned char c, int color, Font font, int scale);
 void draw_text_scaled(int x, int y, const char *text, int color, Font font, int scale);
 
-// Imatges
+
+/*************** IMATGES ***************************************************/
 void draw_image_file(int x, int y, int dest_w, int dest_h, const char *path);
 
-// Utilitats
+
+/*************** UTILITATS ************************************************/
 int  rgb_to_565(int r, int g, int b);
 int  random_color();
 void clear_screen(int color);

@@ -28,4 +28,5 @@ Per tal d'escriure codi nou sense modificar els ja funcionals de sessions anteri
   - `uart_basic.c`: imprimeix el que rep del PIC i li envia el que s'entri per teclat.
   - `uart_button.c`: depenent del que enviï el PIC, imprimeix ON o OFF a la TFT.
   - `uart_touchpad.c`: rep coordenades del touchpad des del PIC i les pinta a la TFT.
+  - `touchpad_ui.c`: mateix que l'anterior amb botons interactius
 

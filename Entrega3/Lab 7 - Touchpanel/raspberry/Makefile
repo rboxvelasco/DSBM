@@ -4,7 +4,7 @@ LIBS   = -lwiringPi -lm -lpthread
 OBJS   = driver.o lib_tft.o lib_uart.o stb_image.o
 
 # --- Programes principals ---
-TARGETS = print_screen uart_basic uart_button uart_touchpad
+TARGETS = print_screen uart_basic uart_button uart_touchpad touchpad_ui
 
 all: $(TARGETS)
 

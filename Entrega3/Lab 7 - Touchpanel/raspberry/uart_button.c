@@ -11,8 +11,8 @@ static volatile int running = 1;
 
 
 int main() {
-    init(); // inicialitzar pantalla
-    draw_image_file(0, 0, Size_X, Size_Y, "../../assets/off.png");
+    init_TFT(); // inicialitzar pantalla
+    draw_image(0, 0, Size_X, Size_Y, "../../../assets/off.png");
 
     fd = open_serial(SERIAL_PORT);
     if (fd < 0) {
@@ -44,11 +44,11 @@ int main() {
         if (estat == 0 && buf[1] == '1') {
             printf("ON\n");
             estat = 1;
-            draw_image_file(0, 0, Size_X, Size_Y, "../../assets/on.png");
+            draw_image(0, 0, Size_X, Size_Y, "../../../assets/on.png");
         } else if (estat == 1 && buf[1] == '0') {
             printf("OFF\n");
             estat = 0;
-            draw_image_file(0, 0, Size_X, Size_Y, "../../assets/off.png");
+            draw_image(0, 0, Size_X, Size_Y, "../../../assets/off.png");
         }
 
         // Envia segon missatge 'x' després de mostrar la imatge

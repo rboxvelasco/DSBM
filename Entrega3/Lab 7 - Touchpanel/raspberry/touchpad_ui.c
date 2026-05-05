@@ -1,32 +1,68 @@
+#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
 #include <pthread.h>
-
+#include <errno.h>
+#include "lib_tft.h"
 #include "lib_uart.h"
+#include "colors.h"
 
-/**************** Variables globals **********************/
-static int  fd = -1;
+#define SERIAL_PORT "/dev/ttyAMA0"
+#define BAUD_RATE   B9600
+
+// --- Variables globals ----------------------------------------
+static int  fd          = -1;
 static volatile int running = 1;
 
+Font Font5x7_struct = { Font5x7, 5, 7 };
 
-/********************* Codi UART **************************/
+void restart_UI() {
+    clear_screen(GREEN);
+    draw_image(Size_X-20, Size_Y-10, Size_X, Size_Y, "../../../assets/close.png");
+}
 
-// Thread de recepcio: imprimeix per pantalla el que rebi per UART
+void init_UI () {
+    init_TFT();
+    restart_UI();
+    draw_circle_filled(10,10,5,WHITE);
+    draw_circle_filled(20,10,5,WHITE);
+    draw_triangle_filled(10,10,20,10,15,30,SKYBLUE);
+    draw_text(Size_X-20,Size_Y-20, "Tancar", RED, Font5x7_struct, 2);
+}
+
+// --- Thread de recepcio ---------------------------------------
+
+
 void *rx_thread(void *arg) {
     (void)arg;
-    char buf[64];
+    char packet[4];
+    int received = 0;
 
     while (running) {
-        int n = read(fd, buf, sizeof(buf) - 1);
+        char byte;
+        int n = read(fd, &byte, 1);
         if (n > 0) {
-            buf[n] = '\0';
-            printf("[RX] ");
-            for (int i = 0; i < n; i++) {
-                unsigned char c = (unsigned char)buf[i];
-                if (c >= 32 && c < 127) printf("%c", c); // Caracter imprimible
-                else printf("\\x%02X", c); // Hex si no es imprimible
+            packet[received++] = byte;
+            if (received == 4) {
+                uint16_t x = (uint16_t)(packet[0] | (packet[1] << 8));
+                uint16_t y = (uint16_t)(packet[2] | (packet[3] << 8));
+
+                int sx, sy;
+                touch_to_screen(x, y, &sx, &sy);
+                printf("[RX] touch=(%u, %u)  ->  screen=(%d, %d)\n", x, y, sx, sy);
+//                if (sx >= Size_X-20 && sy > Size_Y-10) {
+//                    restart_UI();
+//                }
+//                else {
+                    draw_pixel_scaled(sx,sy,RED,3);
+//                }
+                fflush(stdout);
+                received = 0;
             }
-            printf("\n");
-            fflush(stdout);
         } else if (n < 0 && errno != EAGAIN) {
             fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
             running = 0;
@@ -36,7 +72,7 @@ void *rx_thread(void *arg) {
 }
 
 
-// Bucle de transmissio: envia per UART el que s'escrigui per teclat
+// --- Bucle de transmissio -------------------------------------
 void tx_loop() {
     char input[256];
 
@@ -73,13 +109,18 @@ void tx_loop() {
         }
 
         int written = write(fd, payload, 1);
-        if (written < 0) fprintf(stderr, "[ERROR TX] %s\n", strerror(errno));
-        else printf("[TX] %.*s\n", len, payload);
+        if (written < 0)
+            fprintf(stderr, "[ERROR TX] %s\n", strerror(errno));
+        else
+            printf("[TX] %.*s\n", len, payload);
     }
 }
 
 
 int main() {
+    init_UI();
+    clear_screen(GREEN);
+
     fd = open_serial(SERIAL_PORT);
     if (fd < 0) {
         fprintf(stderr, "Comprova:\n");
@@ -96,7 +137,6 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Executar bucle de transmissió
     tx_loop();
 
     // Neteja
@@ -106,3 +146,4 @@ int main() {
     printf("[OK] Port tancat. Fins aviat!\n");
     return EXIT_SUCCESS;
 }
+

@@ -2,9 +2,8 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#include<wiringPi.h>
-#include<stdio.h>
-#include "ascii5x7.h"
+#include <wiringPi.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 //Connections, TFT pin = board pin

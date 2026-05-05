@@ -1,47 +1,26 @@
+#include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <termios.h>
 #include <pthread.h>
-
+#include <errno.h>
 #include "lib_tft.h"
 #include "lib_uart.h"
 #include "colors.h"
 
-/****************** Variables globals *************************/
+#define SERIAL_PORT "/dev/ttyAMA0"
+#define BAUD_RATE   B9600
+
+// --- Variables globals ----------------------------------------
 static int  fd          = -1;
 static volatile int running = 1;
 
 
-/**************** Calibració touchpad-pantalla **********************/
+// --- Thread de recepcio ---------------------------------------
 
-/*
-Coeficients escalats x65536 per evitar floats (apta per MCU/embedded)
-   screen_x = 0.382295 * touch_x + 0.011948 * touch_y - 64.2113
-   screen_y = 0.014370 * touch_x + 0.569150 * touch_y - 92.7876
-*/
-#define CAL_A   25055    /*  0.382295 * 65536 */
-#define CAL_B     783    /*  0.011948 * 65536 */
-#define CAL_C  -4208630  /* -64.2113  * 65536 */
-
-#define CAL_D     942    /*  0.014370 * 65536 */
-#define CAL_E   37299    /*  0.569150 * 65536 */
-#define CAL_F  -6079841  /* -92.7876  * 65536 */
-
-// "Tradueix" les coordenades detectades pel touchpad a les de la TFT
-static inline void touch_to_screen(uint16_t touch_x, uint16_t touch_y, int *screen_x, int *screen_y) {
-    int32_t sx = (CAL_A * (int32_t)touch_x + CAL_B * (int32_t)touch_y + CAL_C) >> 16;
-    int32_t sy = (CAL_D * (int32_t)touch_x + CAL_E * (int32_t)touch_y + CAL_F) >> 16;
-
-    // Clamp a l'àrea de pantalla
-    if (sx < 0)      sx = 0;
-    if (sx > Size_X) sx = Size_X;
-    if (sy < 0)      sy = 0;
-    if (sy > Size_Y) sy = Size_Y;
-
-    *screen_x = (int)sx;
-    *screen_y = (int)sy;
-}
-
-
-/**************** Rececpició i pintat de coordenades **********************/
 
 void *rx_thread(void *arg) {
     (void)arg;
@@ -56,21 +35,23 @@ void *rx_thread(void *arg) {
             if (received == 4) {
                 uint16_t x = (uint16_t)(packet[0] | (packet[1] << 8));
                 uint16_t y = (uint16_t)(packet[2] | (packet[3] << 8));
+                //uint16_t y = 0:
+                //printf("[RX] X=%u  Y=%u\n", x, y);
 
-                int sx, sy;
-                touch_to_screen(x, y, &sx, &sy);
-                printf("[RX] touch=(%u, %u)  ->  screen=(%d, %d)\n", x, y, sx, sy);
-                draw_pixel(sx-1, sy-1, RED);
-                draw_pixel(sx, sy-1, RED);
-                draw_pixel(sx+1, sy-1, RED);
+int sx, sy;
+touch_to_screen(x, y, &sx, &sy);
+printf("[RX] touch=(%u, %u)  ->  screen=(%d, %d)\n", x, y, sx, sy);
+draw_pixel(sx-1, sy-1, RED);
+draw_pixel(sx, sy-1, RED);
+draw_pixel(sx+1, sy-1, RED);
 
-                draw_pixel(sx-1, sy, RED);
-                draw_pixel(sx, sy, RED);
-                draw_pixel(sx+1, sy, RED);
+draw_pixel(sx-1, sy, RED);
+draw_pixel(sx, sy, RED);
+draw_pixel(sx+1, sy, RED);
 
-                draw_pixel(sx-1, sy+1, RED);
-                draw_pixel(sx, sy+1, RED);
-                draw_pixel(sx+1, sy+1, RED);
+draw_pixel(sx-1, sy+1, RED);
+draw_pixel(sx, sy+1, RED);
+draw_pixel(sx+1, sy+1, RED);
 
                 fflush(stdout);
                 received = 0;
@@ -84,8 +65,78 @@ void *rx_thread(void *arg) {
 }
 
 
+/*
+void *rx_thread(void *arg) {
+    (void)arg;
+    char buf[64];
+
+    while (running) {
+        int n = read(fd, buf, sizeof(buf) - 1);
+        if (n > 0) {
+            buf[n] = '\0';
+            printf("[RX] ");
+            for (int i = 0; i < n; i++) {
+                unsigned char c = (unsigned char)buf[i];
+                    printf("%u", c);   // Caracter imprimible
+            }
+            printf("\n");
+            fflush(stdout);
+        } else if (n < 0 && errno != EAGAIN) {
+            fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
+            running = 0;
+        }
+    }
+    return NULL;
+}
+*/
+
+// --- Bucle de transmissio -------------------------------------
+void tx_loop() {
+    char input[256];
+
+    printf("\nEscriu text i prem Enter per enviar al PIC.\n");
+    printf("Comandes especials:\n");
+    printf("  :quit  -> sortir\n");
+    printf("  :ping  -> envia '?'\n\n");
+
+    while (running) {
+        printf("> ");
+        fflush(stdout);
+
+        if (!fgets(input, sizeof(input), stdin)) {
+            running = 0;
+            break;
+        }
+
+        // Elimina el newline final
+        input[strcspn(input, "\n")] = '\0';
+
+        if (strcmp(input, ":quit") == 0) {
+            running = 0;
+            break;
+        }
+
+        char payload[258];
+        int  len;
+
+        if (strcmp(input, ":ping") == 0) {
+            strcpy(payload, "?");
+            len = 1;
+        } else {
+            len = snprintf(payload, sizeof(payload), "%s\r\n", input);
+        }
+
+        int written = write(fd, payload, 1);
+        if (written < 0)
+            fprintf(stderr, "[ERROR TX] %s\n", strerror(errno));
+        else
+            printf("[TX] %.*s\n", len, payload);
+    }
+}
+
+
 int main() {
-    init();
+    init_TFT();
     clear_screen(GREEN);
 
     fd = open_serial(SERIAL_PORT);
@@ -104,6 +155,8 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    tx_loop();
+
     // Neteja
     running = 0;
     pthread_join(rx, NULL);
@@ -111,3 +164,4 @@ int main() {
     printf("[OK] Port tancat. Fins aviat!\n");
     return EXIT_SUCCESS;
 }
+

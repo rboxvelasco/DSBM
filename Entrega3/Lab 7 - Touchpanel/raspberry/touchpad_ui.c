@@ -22,7 +22,7 @@ Font Font5x7_struct = { Font5x7, 5, 7 };
 
 void restart_UI() {
     clear_screen(GREEN);
-    draw_image(Size_X-20, Size_Y-10, Size_X, Size_Y, "../../../assets/close.png");
+    draw_image(160, 0, 80, 40, "../../../assets/close.png");
 }
 
 void init_UI () {
@@ -31,95 +31,12 @@ void init_UI () {
     draw_circle_filled(10,10,5,WHITE);
     draw_circle_filled(20,10,5,WHITE);
     draw_triangle_filled(10,10,20,10,15,30,SKYBLUE);
-    draw_text(Size_X-20,Size_Y-20, "Tancar", RED, Font5x7_struct, 2);
-}
-
-// --- Thread de recepcio ---------------------------------------
-
-
-void *rx_thread(void *arg) {
-    (void)arg;
-    char packet[4];
-    int received = 0;
-
-    while (running) {
-        char byte;
-        int n = read(fd, &byte, 1);
-        if (n > 0) {
-            packet[received++] = byte;
-            if (received == 4) {
-                uint16_t x = (uint16_t)(packet[0] | (packet[1] << 8));
-                uint16_t y = (uint16_t)(packet[2] | (packet[3] << 8));
-
-                int sx, sy;
-                touch_to_screen(x, y, &sx, &sy);
-                printf("[RX] touch=(%u, %u)  ->  screen=(%d, %d)\n", x, y, sx, sy);
-//                if (sx >= Size_X-20 && sy > Size_Y-10) {
-//                    restart_UI();
-//                }
-//                else {
-                    draw_pixel_scaled(sx,sy,RED,3);
-//                }
-                fflush(stdout);
-                received = 0;
-            }
-        } else if (n < 0 && errno != EAGAIN) {
-            fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
-            running = 0;
-        }
-    }
-    return NULL;
-}
-
-
-// --- Bucle de transmissio -------------------------------------
-void tx_loop() {
-    char input[256];
-
-    printf("\nEscriu text i prem Enter per enviar al PIC.\n");
-    printf("Comandes especials:\n");
-    printf("  :quit  -> sortir\n");
-    printf("  :ping  -> envia '?'\n\n");
-
-    while (running) {
-        printf("> ");
-        fflush(stdout);
-
-        if (!fgets(input, sizeof(input), stdin)) {
-            running = 0;
-            break;
-        }
-
-        // Elimina el newline final
-        input[strcspn(input, "\n")] = '\0';
-
-        if (strcmp(input, ":quit") == 0) {
-            running = 0;
-            break;
-        }
-
-        char payload[258];
-        int  len;
-
-        if (strcmp(input, ":ping") == 0) {
-            strcpy(payload, "?");
-            len = 1;
-        } else {
-            len = snprintf(payload, sizeof(payload), "%s\r\n", input);
-        }
-
-        int written = write(fd, payload, 1);
-        if (written < 0)
-            fprintf(stderr, "[ERROR TX] %s\n", strerror(errno));
-        else
-            printf("[TX] %.*s\n", len, payload);
-    }
+    draw_text(65, 5, "Close", RED, Font5x7_struct, 3);
 }
 
 
 int main() {
     init_UI();
-    clear_screen(GREEN);
 
     fd = open_serial(SERIAL_PORT);
     if (fd < 0) {
@@ -129,19 +46,41 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Inicia el thread de recepcio
-    pthread_t rx;
-    if (pthread_create(&rx, NULL, rx_thread, NULL) != 0) {
-        fprintf(stderr, "[ERROR] No s'ha pogut crear el thread RX\n");
-        close(fd);
-        return EXIT_FAILURE;
-    }
+    while(1) {
+        char packet[4];
+        int received = 0;
 
-    tx_loop();
+        while (running) {
+            char byte;
+            int n = read(fd, &byte, 1);
+            if (n > 0) {
+                packet[received++] = byte;
+                if (received == 4) {
+                    uint16_t x = (uint16_t)(packet[0] | (packet[1] << 8));
+                    uint16_t y = (uint16_t)(packet[2] | (packet[3] << 8));
+
+                    int sx, sy;
+                    touch_to_screen(x, y, &sx, &sy);
+                    printf("[RX] touch=(%u, %u)  ->  screen=(%d, %d)\n", x, y, sx, sy);
+                    if (sx >= 150 && sy < 50) {
+                        restart_UI();
+			sleep(5);
+                    }
+                    else {
+                        draw_pixel_scaled(sx,sy,RED,3);
+                    }
+                    fflush(stdout);
+                    received = 0;
+                }
+            } else if (n < 0 && errno != EAGAIN) {
+                fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
+                running = 0;
+            }
+        }
+    }
 
     // Neteja
     running = 0;
-    pthread_join(rx, NULL);
     close(fd);
     printf("[OK] Port tancat. Fins aviat!\n");
     return EXIT_SUCCESS;

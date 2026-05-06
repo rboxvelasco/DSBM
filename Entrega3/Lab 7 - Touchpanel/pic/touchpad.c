@@ -11,6 +11,19 @@ volatile char rx = '1';
 
 /************   ANALOG READ **********************/
 
+int is_touched() {
+    // X+ (RB1) -> HIGH, X- (RB0) -> LOW
+    TRISBbits.TRISB1 = 0; LATBbits.LATB1 = 1;
+    TRISBbits.TRISB0 = 0; LATBbits.LATB0 = 0;
+
+    // Y+ (RB13) -> input digital
+    TRISBbits.TRISB13 = 1;
+    AD1PCFGbits.PCFG11 = 1;
+
+    __delay_us(50);
+    return PORTBbits.RB13; // 1 = tocat, 0 = no tocat
+}
+
 void configure2readX() {
     // X+: AN3 -> RB1: output digital, valor 1
     TRISBbits.TRISB1 = 0;
@@ -128,18 +141,18 @@ void configure_UART() {
 }
 
 // ISR UART RX
+// Not used, és per rebre dades
 void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void)
 {
     while (U1STAbits.URXDA) {
         rx = U1RXREG;
     }
-
     IFS0bits.U1RXIF = 0;
 }
 
-void send_UART () {
+void send_UART (char c) {
    while (U1STAbits.UTXBF);
-   U1TXREG = rx;
+   U1TXREG = c;
 }
 
 void send_coords(uint16_t x, uint16_t y) {

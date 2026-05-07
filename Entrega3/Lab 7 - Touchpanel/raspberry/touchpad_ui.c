@@ -67,7 +67,7 @@ void handle_touch(int sx, int sy) {
             }
             break;
         case 1: // pagina main
-            if (sx >= 150 && sy < 50 && sx < SIZE_X - 5 && sy < SIZE_Y - 5) {
+            if (sx >= 150 && sy < 50) {
                 state = 0;
                 set_Pin(0);
                 draw_start_button();

@@ -5,6 +5,7 @@
 
 Font Font5x7_default = { Font5x7, 5, 7 };
 
+
 // Prototips interns del driver (definits a driver.c)
 void Config_Pins();
 void SPI_TFT_Reset();
@@ -307,6 +308,11 @@ void touch_to_screen(uint16_t touch_x, uint16_t touch_y, int *screen_x, int *scr
     if (sx > Size_X) sx = Size_X;
     if (sy < 0)      sy = 0;
     if (sy > Size_Y) sy = Size_Y;
+
+    if (sx < NO_TOUCH_THRESHOLD_X && sy < NO_TOUCH_THRESHOLD_Y) {
+        sx = -1;
+        sy = -1;
+    }
 
     *screen_x = (int)sx;
     *screen_y = (int)sy;

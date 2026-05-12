@@ -9,169 +9,193 @@
 #include <errno.h>
 #include "lib_tft.h"
 #include "lib_uart.h"
-#include "colors.h"
 
-#define SERIAL_PORT "/dev/ttyAMA0"
-#define BAUD_RATE   B9600
-#define PIN_SEND_PERMISSION 13  // GPIO13 (BCM)
-#define PACKET_SIZE 7
-#define SYNC_BYTE   0xAA
-uint8_t LIGHT_HIGH = 250;
-uint8_t LIGHT_LOW = 240;
 
 // --- Variables globals ----------------------------------------
-static int  fd          = -1;
-static volatile int running = 1;
+int matrix[Size_X][Size_Y];
+
 static volatile int game_state = 0; // 0 pagina d'incici; 1 pagina main
 static volatile int light_state = 1; // 0 dark mode; 1 bright mode
+uint8_t ligth_high_th = 250;
+uint8_t light_low_th = 240;
+static volatile int radi_button = 5;
 
-Font Font5x7_struct = { Font5x7, 5, 7 };
+Font DefaultFont = { Font5x7, 5, 7 };
 
+typedef struct {
+    int x0, y0, x1, y1;
+    int color1, color2;
+    int border_color1, border_color_2;
+    char* text;
+} Button;
+
+Button CloseButton = {160, 2, 238, 40, RED, WHITE, 0, 0,""};
+Button ResetButton = {10,283,110,318, SKYBLUE, SKYBLUE, BLACK, WHITE, "Clear"};
+Button ProcessButton = {130,283,230,318, SKYBLUE, SKYBLUE, BLACK, WHITE, "Process"};
 
 /*******************       DRAW FUNCTIONS      ***********/
 void draw_close_button() {
-    int color_text = RED;
-    if (!light_state) color_text = WHITE;
-    draw_image(160, 0, 80, 40, "../../assets/close.png");
-    draw_text(65, 5, "Close", color_text, Font5x7_struct, 3);
+    draw_image(CloseButton.x0, CloseButton.y0, CloseButton.x1-CloseButton.x0, CloseButton.y1-CloseButton.y0, "../../assets/close.png");
+    draw_text(65, 5, "Close", light_state ? CloseButton.color1 : CloseButton.color2, DefaultFont, 3);
 }
 
 void draw_start_button() {
-    int color_text = BLACK;
-    if (!light_state) color_text = WHITE;
-
+    int color_text = light_state ? BLACK : WHITE;
     draw_circle(Size_X/2,Size_Y/2,80,color_text);
     draw_circle_filled(Size_X/2,Size_Y/2,79,SKYBLUE);
-    draw_text(Size_X/2-60, Size_Y/2-10, "Iniciar", color_text, Font5x7_struct,3);
+    draw_text(Size_X/2-60, Size_Y/2-10, "Iniciar", color_text, DefaultFont,3);
+}
+
+void draw_button(Button button) {
+    int color = light_state? button.color1 : button.color2;
+    int color2 = light_state ? button.border_color1 : button.border_color_2;
+    // Draw border
+    draw_rectangle(button.x0-1, button.y0-1, button.x1-button.x0+1, button.y1-button.y0+1, color2);
+    // Draw rectangle
+    draw_rectangle_filled(button.x0, button.y0, button.x1-button.x0, button.y1-button.y0, color);
+    // Draw centered text
+    // draw_text((button.x1-button.x0)/2-60, (button.x1-button.x0)/2-10, button.text, color2, DefaultFont, scale_text);
+    const char* label = button.text;
+    int scale_text = 2;
+    int text_w = strlen(label) * (DefaultFont.width * scale_text + scale_text);
+    int text_h = DefaultFont.height * scale_text;
+    int tx = button.x0 + (button.x1 - button.x0 - text_w) / 2;
+    int ty = button.y0 + (button.y1 - button.y0 - text_h) / 2;
+    draw_text(tx, ty, label, color2, DefaultFont, scale_text);
 }
 
 void print_backround() {
-    if (light_state == 0) clear_screen(BLACK);
-    else clear_screen(GREEN);
+    light_state ? clear_screen(GREEN) : clear_screen(BLACK);
+}
+
+void redraw_matrix() {
+    int color = light_state ? RED : WHITE;
+    for (int x = 0; x < Size_X; x++) {
+        for (int y = 0; y < Size_Y; y++) {
+            if (matrix[x][y]) {
+                draw_pixel(x, y, color);
+            }
+        }
+    }
 }
 
 void print_screen() {
     // TODO: Afegir logica de invertir colors
+    set_Pin(0);
     print_backround();
-    if (game_state) draw_close_button();
+    if (game_state) {
+        draw_close_button();
+        draw_button(ResetButton);
+        draw_button(ProcessButton);
+        redraw_matrix();
+    }
     else draw_start_button();
+    sleep(1);
+    set_Pin(1);
 }
 
-void init_UI () {
-    init_TFT();
-    print_screen();
-}
-
-void config_Pin() {
-    wiringPiSetupGpio();
-    pinMode(PIN_SEND_PERMISSION, OUTPUT);
-    // Inicialment a zero
-    digitalWrite(PIN_SEND_PERMISSION, LOW);
-}
-
-void set_Pin(int value) {
-    digitalWrite(PIN_SEND_PERMISSION, value ? HIGH : LOW);
+/*******************       LOGIC FUNCTIONS      ***********/
+int button_pressed(int x, int y, Button button) {
+    return x >= button.x0-radi_button && x <= button.x1+radi_button && y >= button.y0-radi_button && y <= button.y1+radi_button;
 }
 
 void handle_light(int8_t light) {
-    if (light > LIGHT_HIGH) {
+    int prev = light_state;
+    if (light > ligth_high_th) {
         light_state = 0;
-    } else if (light < LIGHT_LOW) {
+    } else if (light < light_low_th) {
         light_state = 1;
     }
+    // Si canvia l'estat, escrivim el nou estat
+    if (light_state != prev) {
+        // Escriure a un fitxer l'estat
+        // Repintar la pantalla
+        print_screen();
+    }
+}
+
+void init_matrix() {
+    memset(matrix, 0, sizeof(matrix));
 }
 
 void handle_touch(int sx, int sy) {
     if (sx < 0 || sy < 0) return;
-
     switch (game_state) {
         case 0: // pagina boto iniciar
             if ((sx-Size_X/2)*(sx-Size_X/2) + (sy-Size_Y/2)*(sy-Size_Y/2) < 80*80) {
                 game_state = 1;
-                set_Pin(0);
                 print_screen();
-                sleep(1);
-                set_Pin(1);
             }
             break;
         case 1: // pagina main
-            if (sx >= 150 && sy < 50) {
+            if (button_pressed(sx,sy,CloseButton)) {
                 game_state = 0;
-                set_Pin(0);
                 print_screen();
-                sleep(1);
-                set_Pin(1);
+            }
+            else if (button_pressed(sx,sy,ResetButton)) {
+                // Reiniciar la matriu i imprimir pantalla
+                init_matrix();
+                print_screen();
+            } 
+            else if (button_pressed(sx,sy,ProcessButton)) {
+                // Processar la matriu i imprimir pantalla
+                print_screen();
             }
             else {
+                // Valid touch, pintar i emmagatzemar
                 if (light_state) draw_pixel_scaled(sx,sy,RED,3);
                 else draw_pixel_scaled(sx,sy,WHITE,3);
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        if (dx >= 0 && dx < Size_X && dy >= 0 && dy < Size_Y)
+                            matrix[sx+dx][sy+dy] = 1; 
+                    }
+                }
             }
             break;
     }
 }
 
+void init_UI () {
+    init_TFT();
+    init_matrix();
+    print_screen();
+}
+
+/*******************       MAIN       ***********/
 int main() {
     config_Pin();
     init_UI();
+    if (start_UART() < 0) return EXIT_FAILURE;
 
-    fd = open_serial(SERIAL_PORT);
-    if (fd < 0) {
-        fprintf(stderr, "Comprova:\n");
-        fprintf(stderr, "  1. sudo raspi-config -> Interface Options -> Serial\n");
-        fprintf(stderr, "  2. sudo usermod -aG dialout $USER  (i re-login)\n");
-        return EXIT_FAILURE;
-    }
-
-    // Posem el pin a 1 perque el PIC envii dades
+    // Autoritzem el PIC que envii dades
     set_Pin(1);
+    while (1) {
+        // Llegim un missatge
+        uint16_t x, y;
+        int8_t light;
+        int ret = read_message(&x, &y, &light);
+        if (ret < 0) {
+            fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
+            break;
+        } 
 
-    while (running) {
-        uint8_t buf[PACKET_SIZE];  // Canvi 2: uint8_t en lloc de char (per comparar 0xAA)
-        int filled = 0;
+        // El convertim a coordenades de la TFT
+        int sx, sy;
+        touch_to_screen(x, y, &sx, &sy);
+        printf("[RX] touch=(%u, %u) -> screen=(%d, %d); light=%d\n", x, y, sx, sy, light);
+        fflush(stdout);
 
-        while (running) {
-            uint8_t byte;
-            int n = read(fd, &byte, 1);
-            if (n > 0) {
-                buf[filled++] = byte;
-
-                if (filled == PACKET_SIZE) {
-                    // Canvi 3: validar els dos 0xAA i els bytes alts
-                    if (buf[0] == 0xAA       &&
-                        buf[2] <= 0x03       &&
-                        buf[4] <= 0x03       &&
-                        buf[6] == 0xAA) {
-
-                        // Canvi 4: índexs desplaçats +1 per saltar el 0xAA inicial
-                        uint16_t x  = (uint16_t)(buf[1] | (buf[2] << 8));
-                        uint16_t y  = (uint16_t)(buf[3] | (buf[4] << 8));
-                        uint8_t light = (uint8_t) buf[5];
-
-                        int sx, sy;
-                        touch_to_screen(x, y, &sx, &sy);
-                        printf("[RX] touch=(%u, %u) -> screen=(%d, %d); light=%d\n",
-                            x, y, sx, sy, light);
-                        handle_touch(sx, sy);
-                        handle_light(light);
-                        fflush(stdout);
-                        filled = 0;
-
-                    } else {
-                        // Re-sincronització: shift d'un byte
-                        memmove(buf, buf + 1, PACKET_SIZE - 1);
-                        filled = PACKET_SIZE - 1;
-                    }
-                }
-            } else if (n < 0 && errno != EAGAIN) {
-                fprintf(stderr, "[ERROR RX] %s\n", strerror(errno));
-                running = 0;
-            }
-        }
+        // Logica i processat del missatge
+        handle_touch(sx, sy);
+        handle_light(light);
     }
 
     // Neteja
-    running = 0;
-    close(fd);
-    printf("[OK] Port tancat. Fins aviat!\n");
+    if (close_UART() < 0) {
+        fprintf(stderr, "[ERROR] Error tancant UART\n");
+        return EXIT_FAILURE;
+    } else printf("[OK] Port tancat. Fins aviat!\n");
+    
     return EXIT_SUCCESS;
 }

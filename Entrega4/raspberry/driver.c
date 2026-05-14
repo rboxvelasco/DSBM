@@ -216,6 +216,7 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Dat(color);
 }
 
+/*
 // Optimització per a pintar regions, en comptes d'enviar la info a cada píxel,
 // només l'envia un cop
 void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
@@ -239,7 +240,9 @@ void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
         }
     }
 }
+*/
 
+/*
 void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
 {
     int x, y;
@@ -274,8 +277,19 @@ void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
         Send_SPI_8(color & 0xFF);
     }
     CS_TFT(1);
-}
+    Write_SPI_TFT_Reg(0x02, (Orig_X >> 8));
+    Write_SPI_TFT_Reg(0x03, (Orig_X >> 0));
+    Write_SPI_TFT_Reg(0x04, ((Size_X - 1) >> 8));
+    Write_SPI_TFT_Reg(0x05, ((Size_X - 1) >> 0));
+    Write_SPI_TFT_Reg(0x06, (Orig_Y >> 8));
+    Write_SPI_TFT_Reg(0x07, (Orig_Y >> 0));
+    Write_SPI_TFT_Reg(0x08, ((Size_Y - 1) >> 8));
+    Write_SPI_TFT_Reg(0x09, ((Size_Y - 1) >> 0));
 
+}
+*/
+
+/*
 void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
 {
     int npx;
@@ -308,10 +322,20 @@ void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
     }
     CS_TFT(1);
 }
+*/
+
 
 void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
 {
     int n_pixels, i;
+    if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+    if (y0 > y1) { int t = y0; y0 = y1; y1 = t; }
+
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 >= Size_X) x1 = Size_X - 1;
+    if (y1 >= Size_Y) y1 = Size_Y - 1;
+
 
     // Definim la finestra de dibuix als registres del HX8347.
     // Cada registre és de 8 bits, per tant els valors de 16 bits
@@ -344,6 +368,7 @@ void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
 
     // Restaurem la finestra als valors originals del reset
     // perquè SPI_TFT_pixel continuï funcionant correctament.
+    
     Write_SPI_TFT_Reg(0x02, (Orig_X >> 8));
     Write_SPI_TFT_Reg(0x03, (Orig_X >> 0));
     Write_SPI_TFT_Reg(0x04, ((Size_X - 1) >> 8));
@@ -352,4 +377,6 @@ void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
     Write_SPI_TFT_Reg(0x07, (Orig_Y >> 0));
     Write_SPI_TFT_Reg(0x08, ((Size_Y - 1) >> 8));
     Write_SPI_TFT_Reg(0x09, ((Size_Y - 1) >> 0));
+    
 }
+

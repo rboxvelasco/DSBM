@@ -215,7 +215,7 @@ void SPI_TFT_pixel(int x, int y, int color)
     Write_SPI_TFT_Cmd(0x22);
     Write_SPI_TFT_Dat(color);
 }
-
+/*
 // Optimització per a pintar regions, en comptes d'enviar la info a cada píxel,
 // només l'envia un cop
 void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
@@ -240,3 +240,41 @@ void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
     }
 }
 
+*/
+
+void SPI_TFT_region(int x1, int y1, int x2, int y2, int color)
+{
+    int total;
+
+    // Ordenar coordenades
+    if (x1 > x2) {
+        int t = x1;
+        x1 = x2;
+        x2 = t;
+    }
+
+    if (y1 > y2) {
+        int t = y1;
+        y1 = y2;
+        y2 = t;
+    }
+
+    // Definir finestra correctament
+    Write_SPI_TFT_Reg(0x50, x1); // Horizontal start
+    Write_SPI_TFT_Reg(0x51, x2); // Horizontal end
+    Write_SPI_TFT_Reg(0x52, y1); // Vertical start
+    Write_SPI_TFT_Reg(0x53, y2); // Vertical end
+
+    // Posar cursor al punt inicial
+    Write_SPI_TFT_Reg(0x20, x1);
+    Write_SPI_TFT_Reg(0x21, y1);
+
+    // Començar escriptura GRAM
+    Write_SPI_TFT_Cmd(0x22);
+
+    total = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+    while (total--) {
+        Write_SPI_TFT_Dat(color);
+    }
+}

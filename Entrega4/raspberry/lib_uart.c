@@ -68,7 +68,7 @@ int close_UART() {
     return close(fd);
 }
 
-int read_message(uint16_t *x, uint16_t *y, int8_t *light) {
+int read_message(uint16_t *x, uint16_t *y, uint16_t *light) {
     // Buffer per emmagatzemar el missatge
     uint8_t buf[PACKET_SIZE];  
     int filled = 0;
@@ -83,12 +83,13 @@ int read_message(uint16_t *x, uint16_t *y, int8_t *light) {
                 if (buf[0] == 0xAA       &&
                     buf[2] <= 0x03       &&
                     buf[4] <= 0x03       &&
-                    buf[6] == 0xAA) {
+                    buf[7] == 0xAA) {
                     // Canvi 4: índexs desplaçats +1 per saltar el 0xAA inicial
                     *x  = (uint16_t)(buf[1] | (buf[2] << 8));
                     *y  = (uint16_t)(buf[3] | (buf[4] << 8));
-                    *light = (uint8_t) buf[5];
-                    return 0; 
+                    *light = (uint16_t) (buf[5] | (buf[6] << 8));
+                    tcflush(fd, TCIFLUSH);
+		    return 0; 
 
                 } else {
                     // Re-sincronització: shift d'un byte

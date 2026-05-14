@@ -18,8 +18,8 @@ int main() {
 
     printf("Pantalla neta. Dibuixant rectangle, text i imatge...\n");
     draw_text(10, 10, "HOLA MUNDO :)", RED, Font5x7_struct, 2);
-    draw_rectangle_filled(50, 50, 60, 60, BLUE);
-    draw_image(30,100,160,200,"../../../assets/on.png");
+    draw_image(30,100,60,60,"../../../assets/on.png");
+    draw_rectangle_filled(30, 100, 60, 60, BLUE);
 
     double elapsed = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("Temps de rentat: %.6f segons\n", elapsed);

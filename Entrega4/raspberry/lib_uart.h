@@ -15,13 +15,13 @@
 #define SERIAL_PORT "/dev/ttyAMA0"
 
 #define PIN_SEND_PERMISSION 13  // GPIO13 (BCM)
-#define PACKET_SIZE 7
+#define PACKET_SIZE 8
 #define SYNC_BYTE   0xAA
 
 // Opens UART port
 int open_serial(const char *port);
 int start_UART();
-int read_message(uint16_t *x, uint16_t *y, int8_t *light);
+int read_message(uint16_t *x, uint16_t *y, uint16_t *light);
 void config_Pin();
 void set_Pin(int value);
 int close_UART();

@@ -4,7 +4,7 @@ LIBS   = -lwiringPi -lm -lpthread
 OBJS   = driver.o lib_tft.o lib_uart.o stb_image.o
 
 # --- Programes principals ---
-TARGETS = project
+TARGETS = print_screen project
 EXE_TARGETS = $(addsuffix .exe, $(TARGETS))
 
 all: $(EXE_TARGETS)

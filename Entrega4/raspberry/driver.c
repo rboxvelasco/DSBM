@@ -240,3 +240,116 @@ void SPI_TFT_region(int x1, int y1, int x2, int y2, int color) {
     }
 }
 
+void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
+{
+    int x, y;
+    int npx;
+
+    if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+    if (y0 > y1) { int t = y0; y0 = y1; y1 = t; }
+
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 >= Size_X) x1 = Size_X - 1;
+    if (y1 >= Size_Y) y1 = Size_Y - 1;
+
+    Write_SPI_TFT_Reg(0x03, (x0 >> 0));
+    Write_SPI_TFT_Reg(0x02, (x0 >> 8));
+    Write_SPI_TFT_Reg(0x05, (x1 >> 0));
+    Write_SPI_TFT_Reg(0x04, (x1 >> 8));
+
+    Write_SPI_TFT_Reg(0x07, (y0 >> 0));
+    Write_SPI_TFT_Reg(0x06, (y0 >> 8));
+    Write_SPI_TFT_Reg(0x09, (y1 >> 0));
+    Write_SPI_TFT_Reg(0x08, (y1 >> 8));
+
+    Write_SPI_TFT_Cmd(0x22);
+
+    npx = (x1 - x0 + 1) * (y1 - y0 + 1);
+    CS_TFT(0);
+    Send_SPI_8(0x72);
+    for (y = 0; y < npx; y++)
+    {
+        Send_SPI_8(color >> 8);
+        Send_SPI_8(color & 0xFF);
+    }
+    CS_TFT(1);
+}
+
+void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
+{
+    int npx;
+
+    if (x0 > x1) { int t = x0; x0 = x1; x1 = t; }
+    if (y0 > y1) { int t = y0; y0 = y1; y1 = t; }
+
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 >= Size_X) x1 = Size_X - 1;
+    if (y1 >= Size_Y) y1 = Size_Y - 1;
+
+    Write_SPI_TFT_Reg(0x03, x0 & 0xFF);
+    Write_SPI_TFT_Reg(0x02, x0 >> 8);
+    Write_SPI_TFT_Reg(0x05, x1 & 0xFF);
+    Write_SPI_TFT_Reg(0x04, x1 >> 8);
+    Write_SPI_TFT_Reg(0x07, y0 & 0xFF);
+    Write_SPI_TFT_Reg(0x06, y0 >> 8);
+    Write_SPI_TFT_Reg(0x09, y1 & 0xFF);
+    Write_SPI_TFT_Reg(0x08, y1 >> 8);
+
+    npx = (x1 - x0 + 1) * (y1 - y0 + 1);
+
+    CS_TFT(0);
+    Send_SPI_8(0x72);
+    while (npx--)
+    {
+        Send_SPI_8(color >> 8);
+        Send_SPI_8(color & 0xFF);
+    }
+    CS_TFT(1);
+}
+
+void SPI_TFT_region(int x0, int y0, int x1, int y1, int color)
+{
+    int n_pixels, i;
+
+    // Definim la finestra de dibuix als registres del HX8347.
+    // Cada registre és de 8 bits, per tant els valors de 16 bits
+    // s'envien en dos registres consecutius (byte alt, byte baix).
+
+    // Column (X): R02h = start high, R03h = start low
+    //             R04h = end high,   R05h = end low
+    Write_SPI_TFT_Reg(0x02, (x0 >> 8));
+    Write_SPI_TFT_Reg(0x03, (x0 >> 0));
+    Write_SPI_TFT_Reg(0x04, (x1 >> 8));
+    Write_SPI_TFT_Reg(0x05, (x1 >> 0));
+
+    // Row (Y): R06h = start high, R07h = start low
+    //          R08h = end high,   R09h = end low
+    Write_SPI_TFT_Reg(0x06, (y0 >> 8));
+    Write_SPI_TFT_Reg(0x07, (y0 >> 0));
+    Write_SPI_TFT_Reg(0x08, (y1 >> 8));
+    Write_SPI_TFT_Reg(0x09, (y1 >> 0));
+
+    // Enviem la comanda d'escriptura al GRAM una sola vegada.
+    // L'AC (Address Counter) s'incrementa automàticament dins
+    // la finestra definida, esquivant reescriure l'adreça cada píxel.
+    Write_SPI_TFT_Cmd(0x22);
+
+    n_pixels = (x1 - x0 + 1) * (y1 - y0 + 1);
+    for (i = 0; i < n_pixels; i++)
+    {
+        Write_SPI_TFT_Dat(color);
+    }
+
+    // Restaurem la finestra als valors originals del reset
+    // perquè SPI_TFT_pixel continuï funcionant correctament.
+    Write_SPI_TFT_Reg(0x02, (Orig_X >> 8));
+    Write_SPI_TFT_Reg(0x03, (Orig_X >> 0));
+    Write_SPI_TFT_Reg(0x04, ((Size_X - 1) >> 8));
+    Write_SPI_TFT_Reg(0x05, ((Size_X - 1) >> 0));
+    Write_SPI_TFT_Reg(0x06, (Orig_Y >> 8));
+    Write_SPI_TFT_Reg(0x07, (Orig_Y >> 0));
+    Write_SPI_TFT_Reg(0x08, ((Size_Y - 1) >> 8));
+    Write_SPI_TFT_Reg(0x09, ((Size_Y - 1) >> 0));
+}

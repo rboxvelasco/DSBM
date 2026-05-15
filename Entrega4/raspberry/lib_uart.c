@@ -83,13 +83,13 @@ int read_message(uint16_t *x, uint16_t *y, uint16_t *light) {
                 if (buf[0] == 0xAA       &&
                     buf[2] <= 0x03       &&
                     buf[4] <= 0x03       &&
-                    buf[7] == 0xAA) {
+                    buf[8] == 0xAA) {
                     // Canvi 4: índexs desplaçats +1 per saltar el 0xAA inicial
                     *x  = (uint16_t)(buf[1] | (buf[2] << 8));
                     *y  = (uint16_t)(buf[3] | (buf[4] << 8));
                     *light = (uint16_t) (buf[5] | (buf[6] << 8));
                     tcflush(fd, TCIFLUSH);
-		    return 0; 
+		    return 0;
 
                 } else {
                     // Re-sincronització: shift d'un byte

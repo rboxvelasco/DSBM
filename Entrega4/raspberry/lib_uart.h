@@ -15,7 +15,7 @@
 #define SERIAL_PORT "/dev/ttyAMA0"
 
 #define PIN_SEND_PERMISSION 13  // GPIO13 (BCM)
-#define PACKET_SIZE 8
+#define PACKET_SIZE 9
 #define SYNC_BYTE   0xAA
 
 // Opens UART port

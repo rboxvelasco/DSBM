@@ -309,7 +309,7 @@ void touch_to_screen(uint16_t touch_x, uint16_t touch_y, int *screen_x, int *scr
     if (sy < 0)      sy = 0;
     if (sy > Size_Y) sy = Size_Y;
 
-    if (sx < NO_TOUCH_THRESHOLD_X && sy < NO_TOUCH_THRESHOLD_Y) {
+    if (sx < NO_TOUCH_THRESHOLD_X || sy < NO_TOUCH_THRESHOLD_Y) {
         sx = -1;
         sy = -1;
     }

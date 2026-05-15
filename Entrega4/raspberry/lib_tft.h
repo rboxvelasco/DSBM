@@ -21,8 +21,8 @@
 
 // Calibració touchpad-pantalla
 
-#define NO_TOUCH_THRESHOLD_X 2
-#define NO_TOUCH_THRESHOLD_Y 100
+#define NO_TOUCH_THRESHOLD_X 10
+#define NO_TOUCH_THRESHOLD_Y 10
 
 #define CAL_A   25055    /*  0.382295 * 65536 */
 #define CAL_B     783    /*  0.011948 * 65536 */
